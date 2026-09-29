@@ -66,7 +66,7 @@ class AgentRoutingTransactionTest {
         proxy.addAdvice(new TransactionInterceptor(manager,new AnnotationTransactionAttributeSource())); planning=(PlanningService)proxy.getProxy();
     }
     @AfterEach void close() { core.close(); }
-    AgentRoutingDecisionAdapter.Selection select(List<Long> baseline) { return adapter.select(10L,"1","conversation","summarize",2,baseline); }
+    AgentRoutingDecisionAdapter.Selection select(List<Long> baseline) { return adapter.select(10L,"1","conversation","summarize",List.of("read","write"),baseline); }
     void persist(AgentRoutingDecisionAdapter.Selection selection, List<Long> baseline) {
         planning.createPlan("1","conversation","summarize",List.of("read","write"),baseline,selection);
     }
@@ -151,7 +151,7 @@ class AgentRoutingTransactionTest {
         jdbc.execute("CREATE TABLE mate_agent("+String.join(",",columns)+")");
         jdbc.update("INSERT INTO mate_agent(id,name,workspace_id,enabled,deleted) VALUES(2,'Research',10,TRUE,0),(3,'Writing',10,TRUE,0)");
         var realAdapter=new AgentRoutingDecisionAdapter(core,properties,realAgents);planning.setRoutingAdapter(realAdapter);
-        var selected=realAdapter.select(10L,"1","conversation","summarize",2,Arrays.asList(2L,null));
+        var selected=realAdapter.select(10L,"1","conversation","summarize",List.of("read","write"),Arrays.asList(2L,null));
         var started=new CountDownLatch(1);
         try(var executor=Executors.newSingleThreadExecutor()) {
             Future<?> pending=new TransactionTemplate(manager).execute(status->{

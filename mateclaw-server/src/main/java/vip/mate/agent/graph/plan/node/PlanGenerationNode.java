@@ -816,7 +816,7 @@ public class PlanGenerationNode implements NodeAction {
             // A Team whose roster resolution failed must still bypass non-Team routing.
             var routing = leadTeam == null && routingAdapter != null && routingAdapter.enabled()
                     ? routingAdapter.select(chatOrigin.workspaceId(), agentId, conversationId,
-                            displayGoal(accessor.goal()), steps.size(), stepAgentIds) : null;
+                            displayGoal(accessor.goal()), steps, stepAgentIds) : null;
             var plan = routing == null
                     ? planningService.createPlan(agentId, conversationId, persistGoal, steps, stepAgentIds)
                     : planningService.createPlan(agentId, conversationId, persistGoal, steps, stepAgentIds, routing);
