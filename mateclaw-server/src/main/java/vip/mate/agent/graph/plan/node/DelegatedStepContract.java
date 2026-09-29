@@ -45,25 +45,7 @@ final class DelegatedStepContract {
         }
     }
 
-    record Result(boolean completed, String text, String reason) {}
-
-    static Result parse(String reply) {
-        if (reply == null || reply.length() > 4000) return invalid();
-        try {
-            var value = JSON.readTree(reply);
-            if (value == null || !value.isObject() || value.size() != 3
-                    || !value.path("status").isTextual() || !value.path("result").isTextual()
-                    || !value.path("evidence").isTextual()) return invalid();
-            String status = value.path("status").asText();
-            if (!Set.of("COMPLETED", "BLOCKED", "FAILED").contains(status)) return invalid();
-            String result = value.path("result").asText().trim();
-            String evidence = value.path("evidence").asText().trim();
-            if (evidence.isEmpty() || ("COMPLETED".equals(status) && result.isEmpty())) return invalid();
-            return new Result("COMPLETED".equals(status), result, status);
-        } catch (java.io.IOException error) {
-            return invalid();
-        }
+    static vip.mate.agent.runtime.WorkerResultContract.Result parse(String reply) {
+        return vip.mate.agent.runtime.WorkerResultContract.parse(reply, 4000);
     }
-
-    private static Result invalid() { return new Result(false, "", "INVALID_RESULT_CONTRACT"); }
 }

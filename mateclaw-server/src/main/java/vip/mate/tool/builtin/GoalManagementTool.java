@@ -42,6 +42,13 @@ public class GoalManagementTool {
     private final GoalProperties properties;
     private final ObjectMapper objectMapper;
     private final ChatStreamTracker streamTracker;
+    private vip.mate.decision.config.DecisionProperties decisionProperties;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    public void setDecisionProperties(vip.mate.decision.config.DecisionProperties properties) {
+        this.decisionProperties = properties;
+    }
+
 
     @Tool(description = """
             Set a persistent goal for the current conversation. The agent will \
@@ -62,7 +69,7 @@ public class GoalManagementTool {
                     + "Omit to use the system default.",
                     required = false) Boolean autoFollowup,
             @ToolParam(description = "Optional initial checklist: a list of short, individually verifiable "
-                    + "acceptance criteria faithful to the requested final deliverable, not intermediate setup actions. Omit to let the system derive the checklist on first evaluation.",
+                    + "acceptance criteria faithful to the requested final deliverable, not intermediate setup actions. When exitCriteria is supplied, it is authoritative in enabled decision modes. Omit to let the system derive the checklist on first evaluation.",
                     required = false) java.util.List<String> criteria,
             @Nullable ToolContext ctx) {
 
@@ -90,7 +97,15 @@ public class GoalManagementTool {
         req.setExitCriteria(exitCriteria);
         if (turnBudget != null) req.setTurnBudget(turnBudget);
         if (autoFollowup != null) req.setAutoFollowupEnabled(autoFollowup);
-        if (criteria != null && !criteria.isEmpty()) {
+        // One authoritative definition: do not let a competing model-generated checklist
+        // add setup/waiting actions to an explicitly supplied delivery condition.
+        if (decisionProperties != null
+                && decisionProperties.modeFor(vip.mate.decision.api.DecisionType.GOAL_CONTINUATION)
+                    != vip.mate.decision.api.DecisionMode.OFF
+                && exitCriteria != null && !exitCriteria.isBlank()) {
+            req.setCriteria(java.util.List.of(new vip.mate.goal.model.GoalCriterion(
+                    "", exitCriteria.trim(), false, "")));
+        } else if (criteria != null && !criteria.isEmpty()) {
             java.util.List<vip.mate.goal.model.GoalCriterion> items = new java.util.ArrayList<>();
             for (String text : criteria) {
                 if (text != null && !text.isBlank()) {

@@ -82,6 +82,11 @@ public class StepExecutionNode implements NodeAction {
      * specialist agent runs on that agent. Null disables per-step delegation.
      */
     private DelegateAgentTool delegateAgentTool;
+    private vip.mate.goal.service.GoalDecisionAdapter goalDecisionAdapter;
+    public void setGoalDecisionAdapter(vip.mate.goal.service.GoalDecisionAdapter adapter) {
+        this.goalDecisionAdapter = adapter;
+    }
+
 
     public void setDelegateAgentTool(DelegateAgentTool delegateAgentTool) {
         this.delegateAgentTool = delegateAgentTool;
@@ -758,7 +763,17 @@ public class StepExecutionNode implements NodeAction {
         // Keep the rolling working-context in sync exactly like the local path
         // so later steps see this delegated step's result.
         String prevWorkingContext = accessor.workingContext();
-        String formattedNewStep = formatStepResult(stepIndex, finalResult);
+        String summaryResult = finalResult;
+        if (goalDecisionAdapter != null && goalDecisionAdapter.enabled()) {
+            String name = java.util.Objects.toString(childResult.agentName(), "");
+            if (name.length() > 160) name = name.substring(0, 160);
+            // Runtime metadata comes from the actual child invocation, not generated prose.
+            // Keep bounded evidence so summary/evaluation need not guess who ran this step.
+            String identity = MAPPER.valueToTree(Map.of("assignedAgentId", String.valueOf(assignedAgentId),
+                    "assignedAgentName", name, "status", "COMPLETED")).toString();
+            summaryResult = "[Runtime execution evidence] " + identity + "\n" + finalResult;
+        }
+        String formattedNewStep = formatStepResult(stepIndex, summaryResult);
         String updatedWorkingContext = prevWorkingContext.isEmpty()
                 ? rebuildWorkingContext(accessor, appendOne(accessor.completedResults(), formattedNewStep))
                 : appendStepIncremental(prevWorkingContext, formattedNewStep);

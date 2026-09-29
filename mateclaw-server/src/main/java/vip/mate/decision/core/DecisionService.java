@@ -37,6 +37,8 @@ public class DecisionService implements AutoCloseable {
         return new ThreadPoolExecutor(threads, threads, 30, TimeUnit.SECONDS, new ArrayBlockingQueue<>(capacity),
                 Thread.ofPlatform().daemon(true).name(prefix, 0).factory(), new ThreadPoolExecutor.AbortPolicy());
     }
+    public boolean enabled(DecisionType type) { return properties.modeFor(type) != DecisionMode.OFF; }
+
     public DecisionTicket decide(DecisionRequest request) {
         var mode = properties.modeFor(request.type());
         metrics.counter("mate.decision.requests", "type", request.type().name(), "mode", mode.name()).increment();

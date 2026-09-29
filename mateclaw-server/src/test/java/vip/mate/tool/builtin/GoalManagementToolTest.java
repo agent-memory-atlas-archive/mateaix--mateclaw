@@ -90,6 +90,32 @@ class GoalManagementToolTest {
     }
 
     @Test
+    void offRetainsExplicitChecklistAlongsideExitText() {
+        var settings = new vip.mate.decision.config.DecisionProperties();
+        settings.setMode(vip.mate.decision.api.DecisionMode.OFF); tool.setDecisionProperties(settings);
+        when(goalService.create(any(), eq("alice"))).thenReturn(goal(GoalStatus.ACTIVE));
+        tool.setGoal("summary", null, "deliver summary", 2, true, java.util.List.of("original item"),
+                ctxWith("conv-1", 10L, "alice"));
+        var request = org.mockito.ArgumentCaptor.forClass(GoalCreateRequest.class);
+        verify(goalService).create(request.capture(), eq("alice"));
+        org.junit.jupiter.api.Assertions.assertEquals("original item", request.getValue().getCriteria().getFirst().text());
+    }
+
+    @Test
+    void explicitExitCriteriaWinsOverGeneratedSetupChecklist() {
+        tool.setDecisionProperties(new vip.mate.decision.config.DecisionProperties());
+        when(goalService.create(any(), eq("alice"))).thenReturn(goal(GoalStatus.ACTIVE));
+        tool.setGoal("summary", "wait for line then deliver summary", "Output a summary containing the supplied line",
+                2, true, java.util.List.of("Create goal", "Wait for input", "Output summary"),
+                ctxWith("conv-1", 10L, "alice"));
+        var request = org.mockito.ArgumentCaptor.forClass(GoalCreateRequest.class);
+        verify(goalService).create(request.capture(), eq("alice"));
+        org.junit.jupiter.api.Assertions.assertEquals(1, request.getValue().getCriteria().size());
+        org.junit.jupiter.api.Assertions.assertEquals("Output a summary containing the supplied line",
+                request.getValue().getCriteria().getFirst().text());
+    }
+
+    @Test
     void setGoal_happyPath_returnsGoalId() {
         when(goalService.create(any(GoalCreateRequest.class), eq("alice")))
                 .thenReturn(goal(GoalStatus.ACTIVE));

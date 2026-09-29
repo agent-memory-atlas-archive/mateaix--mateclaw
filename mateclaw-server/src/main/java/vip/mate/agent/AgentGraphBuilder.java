@@ -715,6 +715,7 @@ public class AgentGraphBuilder {
             // the team task board instead of the serial delegation pipeline.
             planGenerationNode.setTeamPlanBridge(teamPlanBridge);
             planGenerationNode.setRoutingAdapter(routingDecisionAdapter);
+            planGenerationNode.setGoalDecisionAdapter(goalDecisionAdapter);
             List<ToolCallback> advertisedCallbacks = toolDisclosureService
                     .split(toolSet, Set.of(), autoDemotedTools).activeCallbacks();
             AgentToolSet advertisedToolSet = AgentToolSet.fromCallbacks(
@@ -725,6 +726,7 @@ public class AgentGraphBuilder {
             // Per-step delegation: route a step assigned to a specialist agent
             // through DelegateAgentTool (null when delegation deps aren't wired).
             stepExecutionNode.setDelegateAgentTool(delegateAgentTool);
+            stepExecutionNode.setGoalDecisionAdapter(goalDecisionAdapter);
             PlanSummaryNode planSummaryNode = new PlanSummaryNode(chatModel, planningService, streamingHelper);
             planSummaryNode.setGoalService(goalService);
             DirectAnswerNode directAnswerNode = new DirectAnswerNode();
@@ -877,7 +879,7 @@ public class AgentGraphBuilder {
                                     // rebuilt from team tasks — summarize directly.
                                     PlanStateKeys.PLAN_SUMMARY_NODE, PlanStateKeys.PLAN_SUMMARY_NODE))
                     .addConditionalEdges(PlanStateKeys.STEP_EXECUTION_NODE,
-                            AsyncEdgeAction.edge_async(new StepProgressDispatcher()),
+                            AsyncEdgeAction.edge_async(new StepProgressDispatcher(goalService)),
                             Map.of(
                                     PlanStateKeys.STEP_EXECUTION_NODE, PlanStateKeys.STEP_EXECUTION_NODE,
                                     PlanStateKeys.PLAN_SUMMARY_NODE, PlanStateKeys.PLAN_SUMMARY_NODE,

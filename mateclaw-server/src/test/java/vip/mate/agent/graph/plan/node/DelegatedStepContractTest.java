@@ -31,6 +31,19 @@ class DelegatedStepContractTest {
                 MateClawStateKeys.AGENT_ID, "10"))));
     }
 
+    @Test void preservesRuntimeWorkerIdentityForSummaryAndAcceptance() throws Exception {
+        var adapter = mock(vip.mate.goal.service.GoalDecisionAdapter.class);
+        when(adapter.enabled()).thenReturn(true); node.setGoalDecisionAdapter(adapter);
+        var out = run("{\"status\":\"COMPLETED\",\"result\":\"3个百分点\",\"evidence\":\"98%-95%=3\"}", List.of("95%"));
+        String completed = out.get(PlanStateKeys.COMPLETED_RESULTS).toString();
+        assertTrue(completed.contains("assignedAgentId"));
+        assertTrue(completed.contains("20"));
+        assertTrue(completed.contains("worker"));
+        assertTrue(completed.contains("COMPLETED"));
+        assertTrue(completed.contains("3个百分点"));
+        assertFalse(completed.contains("PRIVATE_ORIGINAL_GOAL"));
+    }
+
     @Test void passesBoundedDependencyEvidenceWithoutFullContext() throws Exception {
         run("{\"status\":\"COMPLETED\",\"result\":\"3个百分点\",\"evidence\":\"98%-95%=3个百分点\"}",List.of("步骤1：95%"));
         var task = ArgumentCaptor.forClass(String.class);
