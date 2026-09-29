@@ -562,7 +562,9 @@ public class PlanGenerationNode implements NodeAction {
             // concatenate the agent's full systemPrompt (wiki / skill / memory guidance),
             // which would dilute the triage instructions.
             List<Message> promptMessages = new ArrayList<>();
-            promptMessages.add(new SystemMessage(PLANNING_PROMPT));
+            promptMessages.add(new SystemMessage(PLANNING_PROMPT
+                    + vip.mate.goal.service.GoalLifecycleHints.current(goalService, conversationId)
+                    + "\nA request to resume or change a goal requires tool execution, never a direct_answer claiming the transition."));
             String workspaceBasePath = state.value(MateClawStateKeys.WORKSPACE_BASE_PATH, "");
             vip.mate.agent.context.ChatOrigin chatOrigin =
                     state.<vip.mate.agent.context.ChatOrigin>value(MateClawStateKeys.CHAT_ORIGIN)

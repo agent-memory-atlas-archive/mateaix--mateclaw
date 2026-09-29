@@ -726,6 +726,7 @@ public class AgentGraphBuilder {
             // through DelegateAgentTool (null when delegation deps aren't wired).
             stepExecutionNode.setDelegateAgentTool(delegateAgentTool);
             PlanSummaryNode planSummaryNode = new PlanSummaryNode(chatModel, planningService, streamingHelper);
+            planSummaryNode.setGoalService(goalService);
             DirectAnswerNode directAnswerNode = new DirectAnswerNode();
 
             KeyStrategyFactory keyStrategyFactory = KeyStrategy.builder()

@@ -97,10 +97,14 @@ class AgentRoutingTransactionTest {
         assertEquals(2,jdbc.queryForObject("SELECT COUNT(*) FROM mate_decision_record",Integer.class));
     }
     @Test void shadowStoresExactExcludedBaselineAndObservesOnlyCommittedPlan() throws Exception {
-        properties.setMode(DecisionMode.SHADOW); var baseline=Arrays.asList(99L,null); var selected=select(baseline);
-        var observed=new CountDownLatch(2);
+        properties.setMode(DecisionMode.SHADOW); var baseline=Arrays.asList(99L,null);
+        var observed=new CountDownLatch(2); var recorded=new CountDownLatch(2);
+        // Configure the spy before select starts asynchronous shadow writes.
+        doAnswer(call->{call.callRealMethod();recorded.countDown();return null;}).when(records).insert(any());
         doAnswer(call->{call.callRealMethod();observed.countDown();return null;}).when(records).outcome(any(),any(),any());
-        persist(selected,baseline); assertTrue(observed.await(5,TimeUnit.SECONDS)); assertEquals(baseline,assignments());
+        var selected=select(baseline);
+        persist(selected,baseline); assertTrue(observed.await(5,TimeUnit.SECONDS));
+        assertTrue(recorded.await(5,TimeUnit.SECONDS)); assertEquals(baseline,assignments());
         assertEquals(2,jdbc.queryForObject("SELECT COUNT(*) FROM mate_decision_outcome WHERE outcome='OBSERVED'",Integer.class));
         assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM mate_decision_record WHERE baseline_value='AGENT:99'",Integer.class));
     }
